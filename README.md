@@ -99,7 +99,7 @@ Please refer to the [VLMEvalKit repository](https://github.com/open-compass/VLME
 ## Citation
 
 ```
-@misc{zhu2024mmdocbenchbench
+@misc{zhu2024mmdocbench
       title={MMDocBench: Benchmarking Large Vision-Language Models for Fine-Grained Visual Document Understanding}, 
       author={Fengbin Zhu and Ziyang Liu and Xiang Yao Ng and Haohui Wu and Wenjie Wang and Fuli Feng and Chao Wang and Huanbo Luan and Tat Seng Chua},
       year={2024},
