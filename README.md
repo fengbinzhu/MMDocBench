@@ -1,7 +1,7 @@
 MMDocBench: Benchmarking Large Vision-Language Models for Fine-Grained Visual Document Understanding
 =======
 
-[[Project Page](https://mmdocbench.github.io/)] [[Paper](https://arxiv.org/abs/)] [[Huggingface Dataset](https://huggingface.co/datasets/next-tat/MMDocBench)] [[Leaderboard](https://mmdocbench.github.io/#leaderboard)]
+[[Project Page](https://mmdocbench.github.io/)] [[Paper](https://arxiv.org/abs/2410.21311)] [[Huggingface Dataset](https://huggingface.co/datasets/next-tat/MMDocBench)] [[Leaderboard](https://mmdocbench.github.io/#leaderboard)]
 
 **MMDocBench** is an open-sourced benchmark with various OCR-free document understanding tasks for evaluating fine-grained visual perception and reasoning abilities.
 
@@ -97,6 +97,18 @@ Please refer to the [VLMEvalKit repository](https://github.com/open-compass/VLME
 </p>
 
 ## Citation
+
+```
+@misc{zhu2024mmdocbenchbench
+      title={MMDocBench: Benchmarking Large Vision-Language Models for Fine-Grained Visual Document Understanding}, 
+      author={Fengbin Zhu and Ziyang Liu and Xiang Yao Ng and Haohui Wu and Wenjie Wang and Fuli Feng and Chao Wang and Huanbo Luan and Tat Seng Chua},
+      year={2024},
+      eprint={2410.21311},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2410.21311}, 
+}
+```
 
 ## Licence
 The benchmark is distributed under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.en) license and the code is licensed under [Apache 2.0](https://github.com/open-compass/VLMEvalKit/blob/main/LICENSE) license following VLMEvalKit.
