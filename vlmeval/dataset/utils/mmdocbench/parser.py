@@ -37,6 +37,7 @@ def digit_fix(text):
 
     return text
 
+
 def month_fix(text):
     month_abbreviations = {
         'jan': 'January',
@@ -146,6 +147,7 @@ def is_reasoning_task(task_name):
         'Sorting',
         'Counting',
     ]
+
 
 def is_narrative_kie(task_name: str, raw_question: str):
     narrative_tags = [
@@ -302,7 +304,7 @@ class TextParser:
             day = int(m.group(2))
             return year, month, day
 
-        m = re.search(rf"\b(\d{{2}})\s*({month_pattern})\s*(\d{{4}})\b",  value, re.I)
+        m = re.search(rf"\b(\d{{2}})\s*({month_pattern})\s*(\d{{4}})\b", value, re.I)
         if m:
             month = month_map[m.group(2).lower()]
             day = int(m.group(1))
@@ -312,7 +314,7 @@ class TextParser:
         m = re.search(rf"\b(\d{{2}})\s*({month_pattern})\s*(\d{{2}})\b", value, re.I)
         if m:
             # guess
-            month =  month_map[m.group(2).lower()]
+            month = month_map[m.group(2).lower()]
             day = int(m.group(1))
             year = int(m.group(3))
             return year, month, day
@@ -336,7 +338,6 @@ class TextParser:
             else:
                 result_tuple = (int(m.group(1)), int(m.group(2)), int(m.group(3)))
             return result_tuple
-
 
     @classmethod
     def number_in(cls, pred_text, gold_text):
@@ -436,8 +437,8 @@ class TextParser:
     @staticmethod
     def extract_from_synonym(pred_text, gold_text, raw_question, is_evidence):
         if re.search(r'what was the change', raw_question, re.I) and gold_text == '0':
-           if re.search(r'no change', pred_text, re.I):
-               return gold_text
+            if re.search(r'no change', pred_text, re.I):
+                return gold_text
         elif re.search(r'^\d+ million$', gold_text, re.I) and re.search(r'^\d+,000,000$', pred_text, re.I):
             gold_num = int(re.search(r'^(\d+) million$', gold_text, re.I).group(1)) * 1000000
             pred_num = int(pred_text.replace(',', ''))
@@ -533,7 +534,6 @@ class TextParser:
             return True
 
         return False
-
 
     @classmethod
     def is_same_ordinal_number(cls, pred_text, gold_text, raw_question):
@@ -656,7 +656,7 @@ class TextParser:
             if match.end() - match.end(1) > 30:
                 if match.group(1) == '.':
                     # remove the '.' for correct number parsing later
-                    if re.search(r'[a-z]$', s[:match.start()], re.I) and re.search(r'^ ?\d', s[match.end() :], re.I):
+                    if re.search(r'[a-z]$', s[:match.start()], re.I) and re.search(r'^ ?\d', s[match.end():], re.I):
                         detections.append((match.group(1), match.end(1) - 1, match.end()))
                 else:
                     detections.append((match.group(1), match.end(1), match.end()))
@@ -689,7 +689,7 @@ class TextParser:
         """
         # cases checking
         possible_negative = 'decrease' in pred_text
-        possible_thousands = ('$' in pred_text or re.search(',\d00|[1-9]000$', pred_text) is not None) and re.search(
+        possible_thousands = ('$' in pred_text or re.search(r',\d00|[1-9]000$', pred_text) is not None) and re.search(
             r'\bstars\b', raw_question, re.I
         ) is None
 

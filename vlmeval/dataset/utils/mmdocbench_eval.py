@@ -549,7 +549,9 @@ def compute_array_metric(instance_details, recall_only=False):
     iou5 = compute_metric(aligned_iou5, num_true, num_positives, iou5_num_invalid)
     iou7 = compute_metric(aligned_iou7, num_true, num_positives, iou7_num_invalid)
     instance_id = instance_details[0]['index']
-    metric_dict = {'index': instance_id, 'em': em, 'f1': f1, 'iou': iou, 'iou@0.2': iou2, 'iou@0.5': iou5, 'iou@0.7': iou7}
+    metric_dict = {
+        'index': instance_id, 'em': em, 'f1': f1, 'iou': iou, 'iou@0.2': iou2, 'iou@0.5': iou5, 'iou@0.7': iou7
+    }
     return metric_dict
 
 
@@ -584,7 +586,9 @@ def compute_reasoning_metric(final_answer_metric, evidence_metric):
     else:
         iou7 = (final_answer_metric['iou@0.7'] + evidence_metric['iou@0.7']) / 2
 
-    return {'index': final_answer_metric['index'], 'em': em, 'f1': f1, 'iou': iou, 'iou@0.2': iou2, 'iou@0.5': iou5, 'iou@0.7': iou7}
+    return {
+        'index': final_answer_metric['index'], 'em': em, 'f1': f1, 'iou': iou, 'iou@0.2': iou2, 'iou@0.5': iou5, 'iou@0.7': iou7
+    }
 
 
 def extract_raw_question(obj):
@@ -758,7 +762,12 @@ def evaluate_simple(task_name, data, model_name):
 
         instance_detail['prediction_json'] = json.dumps(pred_dict)
         details.append(instance_detail)
-        metrics.append({selected_key: instance_detail[selected_key] for selected_key in ['index', 'em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']})
+        metrics.append(
+            {
+                selected_key: instance_detail[selected_key]
+                for selected_key in ['index', 'em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']
+            }
+        )
 
     return metrics, details
 
@@ -815,16 +824,36 @@ def save_metrics(metrics, details, data, save_path):
 
     paper_index = pd.MultiIndex.from_tuples(paper_order, names=['task', 'sub_task'])
     df_sub_task_metrics = (
-        df_instance_metrics.groupby([CAPABILITY_NAME, 'task', 'sub_task'])[['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']].mean().reset_index()
+        df_instance_metrics.groupby(
+            [CAPABILITY_NAME, 'task', 'sub_task']
+        )[['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']].mean().reset_index()
     )
     df_sub_task_metrics_indexed = df_sub_task_metrics.set_index(['task', 'sub_task'])
     df_sub_task_metrics = df_sub_task_metrics_indexed.reindex(paper_index).reset_index()
-    df_task_metrics = df_sub_task_metrics.groupby([CAPABILITY_NAME, 'task'])[['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']].mean().reset_index()
+    df_task_metrics = df_sub_task_metrics.groupby(
+        [CAPABILITY_NAME, 'task']
+    )[['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']].mean().reset_index()
     df_task_metrics['task_categorical'] = pd.Categorical(df_task_metrics['task'], categories=task_order, ordered=True)
     df_task_metrics = df_task_metrics.sort_values(by='task_categorical').drop(columns='task_categorical')
-    df_capability_metrics = df_task_metrics.groupby(CAPABILITY_NAME)[['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']].mean().reset_index()
+    df_capability_metrics = df_task_metrics.groupby(CAPABILITY_NAME)[
+        ['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']
+    ].mean().reset_index()
     df_instance_metrics = df_instance_metrics[
-        ['index', CAPABILITY_NAME, 'task', 'sub_task', 'em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7', 'prediction', 'prediction_json', 'answer']
+        [
+            'index',
+            CAPABILITY_NAME,
+            'task',
+            'sub_task',
+            'em',
+            'f1',
+            'iou',
+            'iou@0.2',
+            'iou@0.5',
+            'iou@0.7',
+            'prediction',
+            'prediction_json',
+            'answer'
+        ]
     ]
     df_overall_metrics = df_capability_metrics[['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']].mean().to_frame().T
 
