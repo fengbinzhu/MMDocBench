@@ -587,7 +587,13 @@ def compute_reasoning_metric(final_answer_metric, evidence_metric):
         iou7 = (final_answer_metric['iou@0.7'] + evidence_metric['iou@0.7']) / 2
 
     return {
-        'index': final_answer_metric['index'], 'em': em, 'f1': f1, 'iou': iou, 'iou@0.2': iou2, 'iou@0.5': iou5, 'iou@0.7': iou7
+        'index': final_answer_metric['index'],
+        'em': em,
+        'f1': f1,
+        'iou': iou,
+        'iou@0.2': iou2,
+        'iou@0.5': iou5,
+        'iou@0.7': iou7
     }
 
 
