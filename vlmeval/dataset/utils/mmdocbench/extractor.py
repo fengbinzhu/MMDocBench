@@ -1,4 +1,5 @@
 import json
+import os
 import re
 
 import numpy as np
@@ -14,7 +15,7 @@ class PredictionExtractor:
     @staticmethod
     def string_to_bbox(input_text):
         try:
-            return eval(input_text)
+            return list(eval(input_text))
         except:
             co_list = re.findall(r'[\d.]+', input_text)
             if len(co_list) == 4:
@@ -101,11 +102,15 @@ class PredictionExtractor:
                 bbox = list(eval(m.group(1)) + eval(m.group(2)))
                 return {'answer': '', 'bbox': bbox}
         elif default != '2d_array':
-            words = re.findall(r'(.+?)(\(\d+,\d+\)),(\(\d+,\d+\))', pred_str)
-            word_texts = [w_tuple[0] for w_tuple in words]
-            word_bboxes = [list(eval(w_tuple[1]) + eval(w_tuple[2])) for w_tuple in words]
-            ids = list(range(len(word_texts)))
-            line_texts, line_bboxes = cls.group_data_to_lines(ids, word_texts, word_bboxes)
+            words = re.findall(r'(.*?)(\(\d+,\d+\)),(\(\d+,\d+\))', pred_str)
+            if words:
+                word_texts = [w_tuple[0] for w_tuple in words]
+                word_bboxes = [list(eval(w_tuple[1]) + eval(w_tuple[2])) for w_tuple in words]
+                ids = list(range(len(word_texts)))
+                line_texts, line_bboxes = cls.group_data_to_lines(ids, word_texts, word_bboxes)
+            else:
+                line_bboxes = []
+                line_texts = [pred_str]
             if default == 'dict':
                 return {'answer': '\n'.join(line_texts), 'bbox': cls.form_outer_bbox(line_bboxes)}
             return [{'answer': line_text, 'bbox': line_bbox} for line_text, line_bbox in zip(line_texts, line_bboxes)]
@@ -129,7 +134,7 @@ class PredictionExtractor:
         default_result = cls.get_default(default_type=default)
 
         prediction_results = None
-        if 'Bbox2Text' in sub_task_name:
+        if 'Text2Bbox' in sub_task_name:
             m = re.search(r'answer":\s*(\[(?:\d+|[0-1]\.\d+)(?:,\s*(?:\d+|[0-1]\.\d+)){3}\])', pred_str)
             if m:
                 prediction_results = {'answer': '', 'bbox': cls.string_to_bbox(m.group(1))}

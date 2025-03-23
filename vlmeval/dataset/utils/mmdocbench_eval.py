@@ -1,5 +1,6 @@
 import itertools
 import json
+import os
 import re
 from collections import Counter
 
@@ -428,7 +429,7 @@ def evaluate_one_pair(instance_id, task_name, sub_task_name, raw_question, pred_
         ori_gold_text = str(gold_obj['answer'])
         gold_bbox = gold_obj['bbox']
 
-    is_evidence = is_reasoning_task(task_name) and gold_key is not None and pred_key is not None
+    is_evidence = is_reasoning_task(task_name) and (gold_key is not None or pred_key is not None)
     parsed_pred_text, parsed_gold_text = TextParser.parse(
         ori_pred_text, ori_gold_text, raw_question, task_name, sub_task_name, is_evidence
     )
@@ -453,6 +454,9 @@ def evaluate_one_pair(instance_id, task_name, sub_task_name, raw_question, pred_
         'em': em_score,
         'f1': f1_score,
         'iou': iou_score,
+        'iou@0.2': 1 if iou_score > 0.2 else 0,
+        'iou@0.5': 1 if iou_score > 0.5 else 0,
+        'iou@0.7': 1 if iou_score > 0.7 else 0,
         'ori_gold_text': ori_gold_text,
     }
 
@@ -503,8 +507,10 @@ def compute_array_metric(instance_details, recall_only=False):
         return Grits.compute_fscore(aligned_score, num_true, num_positives)[selection]
 
     aligned_em = aligned_f1 = aligned_iou = 0
+    aligned_iou2 = aligned_iou5 = aligned_iou7 = 0
     num_true = num_positives = 0
     em_num_invalid = f1_num_invalid = iou_num_invalid = 0
+    iou2_num_invalid = iou5_num_invalid = iou7_num_invalid = 0
     for one in instance_details:
         if one['pred_id'] is not None and one['gold_id'] is not None:
             if one['em'] is not None:
@@ -519,6 +525,18 @@ def compute_array_metric(instance_details, recall_only=False):
                 aligned_iou += one['iou']
             else:
                 iou_num_invalid += 1
+            if one['iou@0.2'] is not None:
+                aligned_iou2 += one['iou@0.2']
+            else:
+                iou2_num_invalid += 1
+            if one['iou@0.5'] is not None:
+                aligned_iou5 += one['iou@0.5']
+            else:
+                iou5_num_invalid += 1
+            if one['iou@0.7'] is not None:
+                aligned_iou7 += one['iou@0.7']
+            else:
+                iou7_num_invalid += 1
         if one['pred_id'] is not None:
             num_positives += 1
         if one['gold_id'] is not None:
@@ -527,8 +545,11 @@ def compute_array_metric(instance_details, recall_only=False):
     em = compute_metric(aligned_em, num_true, num_positives, em_num_invalid)
     f1 = compute_metric(aligned_f1, num_true, num_positives, f1_num_invalid)
     iou = compute_metric(aligned_iou, num_true, num_positives, iou_num_invalid)
+    iou2 = compute_metric(aligned_iou2, num_true, num_positives, iou2_num_invalid)
+    iou5 = compute_metric(aligned_iou5, num_true, num_positives, iou5_num_invalid)
+    iou7 = compute_metric(aligned_iou7, num_true, num_positives, iou7_num_invalid)
     instance_id = instance_details[0]['index']
-    metric_dict = {'index': instance_id, 'em': em, 'f1': f1, 'iou': iou}
+    metric_dict = {'index': instance_id, 'em': em, 'f1': f1, 'iou': iou, 'iou@0.2': iou2, 'iou@0.5': iou5, 'iou@0.7': iou7}
     return metric_dict
 
 
@@ -548,7 +569,22 @@ def compute_reasoning_metric(final_answer_metric, evidence_metric):
     else:
         iou = (final_answer_metric['iou'] + evidence_metric['iou']) / 2
 
-    return {'index': final_answer_metric['index'], 'em': em, 'f1': f1, 'iou': iou}
+    if final_answer_metric['iou@0.2'] is None:
+        iou2 = evidence_metric['iou@0.2']
+    else:
+        iou2 = (final_answer_metric['iou@0.2'] + evidence_metric['iou@0.2']) / 2
+
+    if final_answer_metric['iou@0.5'] is None:
+        iou5 = evidence_metric['iou@0.5']
+    else:
+        iou5 = (final_answer_metric['iou@0.5'] + evidence_metric['iou@0.5']) / 2
+
+    if final_answer_metric['iou@0.7'] is None:
+        iou7 = evidence_metric['iou@0.7']
+    else:
+        iou7 = (final_answer_metric['iou@0.7'] + evidence_metric['iou@0.7']) / 2
+
+    return {'index': final_answer_metric['index'], 'em': em, 'f1': f1, 'iou': iou, 'iou@0.2': iou2, 'iou@0.5': iou5, 'iou@0.7': iou7}
 
 
 def extract_raw_question(obj):
@@ -640,6 +676,9 @@ def evaluate_reasoning(task_name, data, model_name):
         )
         if not gold_dict['bbox']:
             final_answer_detail['iou'] = None
+            final_answer_detail['iou@0.2'] = None
+            final_answer_detail['iou@0.5'] = None
+            final_answer_detail['iou@0.7'] = None
         final_answer_detail['prediction_json'] = json.dumps(pred_dict)
         details.append(final_answer_detail)
 
@@ -713,10 +752,13 @@ def evaluate_simple(task_name, data, model_name):
 
         if sub_task_name == 'Bbox2Text':
             instance_detail['iou'] = None
+            instance_detail['iou@0.2'] = None
+            instance_detail['iou@0.5'] = None
+            instance_detail['iou@0.7'] = None
 
         instance_detail['prediction_json'] = json.dumps(pred_dict)
         details.append(instance_detail)
-        metrics.append({selected_key: instance_detail[selected_key] for selected_key in ['index', 'em', 'f1', 'iou']})
+        metrics.append({selected_key: instance_detail[selected_key] for selected_key in ['index', 'em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']})
 
     return metrics, details
 
@@ -773,18 +815,18 @@ def save_metrics(metrics, details, data, save_path):
 
     paper_index = pd.MultiIndex.from_tuples(paper_order, names=['task', 'sub_task'])
     df_sub_task_metrics = (
-        df_instance_metrics.groupby([CAPABILITY_NAME, 'task', 'sub_task'])[['em', 'f1', 'iou']].mean().reset_index()
+        df_instance_metrics.groupby([CAPABILITY_NAME, 'task', 'sub_task'])[['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']].mean().reset_index()
     )
     df_sub_task_metrics_indexed = df_sub_task_metrics.set_index(['task', 'sub_task'])
     df_sub_task_metrics = df_sub_task_metrics_indexed.reindex(paper_index).reset_index()
-    df_task_metrics = df_sub_task_metrics.groupby([CAPABILITY_NAME, 'task'])[['em', 'f1', 'iou']].mean().reset_index()
+    df_task_metrics = df_sub_task_metrics.groupby([CAPABILITY_NAME, 'task'])[['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']].mean().reset_index()
     df_task_metrics['task_categorical'] = pd.Categorical(df_task_metrics['task'], categories=task_order, ordered=True)
     df_task_metrics = df_task_metrics.sort_values(by='task_categorical').drop(columns='task_categorical')
-    df_capability_metrics = df_task_metrics.groupby(CAPABILITY_NAME)[['em', 'f1', 'iou']].mean().reset_index()
+    df_capability_metrics = df_task_metrics.groupby(CAPABILITY_NAME)[['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']].mean().reset_index()
     df_instance_metrics = df_instance_metrics[
-        ['index', CAPABILITY_NAME, 'task', 'sub_task', 'em', 'f1', 'iou', 'prediction', 'prediction_json', 'answer']
+        ['index', CAPABILITY_NAME, 'task', 'sub_task', 'em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7', 'prediction', 'prediction_json', 'answer']
     ]
-    df_overall_metrics = df_capability_metrics[['em', 'f1', 'iou']].mean().to_frame().T
+    df_overall_metrics = df_capability_metrics[['em', 'f1', 'iou', 'iou@0.2', 'iou@0.5', 'iou@0.7']].mean().to_frame().T
 
     with pd.ExcelWriter(
         save_path,
@@ -814,6 +856,7 @@ def update_data_format(df_data):
         df_data.drop(columns=['dataset_name'], inplace=True)
         df_data.loc[df_data['sub_task'] == 'OCR-VQA', 'sub_task'] = 'BookOCR'
         df_data.loc[df_data[CAPABILITY_NAME] != 'Visual Reasoning', CAPABILITY_NAME] = 'Visual Perception'
+        df_data['reasoning_type'] = df_data['reasoning_type'].fillna('')
         df_data.loc[df_data['reasoning_type'] == 'algebraic', 'reasoning_type'] = 'arithmetic'
         df_data.loc[df_data['task'] == 'Text Localization Bbox2Text', 'sub_task'] = 'Bbox2Text'
         df_data.loc[df_data['task'] == 'Text Localization Text2Bbox', 'sub_task'] = 'Text2Bbox'
@@ -821,12 +864,12 @@ def update_data_format(df_data):
         df_data.loc[df_data['task'] == 'Text Localization Text2Bbox', 'task'] = 'Text Localization'
 
         df_perception = df_data[df_data[CAPABILITY_NAME] == 'Visual Perception']
-        df_reasoning = df_data[df_data[CAPABILITY_NAME] == 'Visual Reasoning']
+        df_reasoning = df_data[df_data[CAPABILITY_NAME] == 'Visual Reasoning'].copy()
         df_reasoning['task'] = df_reasoning['reasoning_type'].str.title()
         df_reasoning['task'] = df_reasoning['task'].apply(
             lambda x: x + ' Reasoning' if x in ['Arithmetic', 'Logical', 'Spatial'] else x
         )
-        df_reasoning.drop(columns=['reasoning_type'], inplace=True)
+        df_reasoning = df_reasoning.drop(columns=['reasoning_type'])  # mute SettingWithCopyWarning warnings
         return pd.concat([df_perception, df_reasoning], ignore_index=True)
     return df_data
 
