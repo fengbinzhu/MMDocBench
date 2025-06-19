@@ -30,7 +30,7 @@ cd MMDocBench
 pip install -e .
 ```
 
-For more information, please refer to the Quick Start from [**VLMEvalKit**](https://github.com/open-compass/VLMEvalKit/blob/main/docs/en/get_started/Quickstart.md#quickstart) to set up the environment and prepare the evaluation script.
+For more information, please refer to the Quick Start from [**VLMEvalKit**](https://github.com/open-compass/VLMEvalKit/blob/main/docs/en/Quickstart.md) to set up the environment and prepare the evaluation script.
 
 The dataset can be downloaded from [here]().
 
@@ -74,16 +74,16 @@ Model paths should be specified in the configuration file. Additionally, we set 
 
 ### Run the evaluation
 
-To run evaluation with either `python` or `torchrun` as follows to evaluate one model with MMDocBench.
+To run evaluation with either `python` or `torchrun` as follows to evaluate one model with MMDocBench. Ensure that you have downloaded the required [TSV file](https://huggingface.co/datasets/next-tat/MMDocBench/resolve/main/mmdocbench.tsv?download=true) to `/PATH/TO/TSV/DATA/` and selected a supported `MODEL_NAME` as listed in `MMDocBench/vlmeval/config.py`.
 
 - python
 ```bash
-LMUData=/PATH/TO/TSV/DATA/ python run.py --data MMDocBench --model /MODEL/PATH/ --mode all --work-dir /PATH/TO/WORK_DIR/ --verbose
+LMUData=/PATH/TO/TSV/DATA/ python run.py --data MMDocBench --model MODEL_NAME --mode all --work-dir /PATH/TO/WORK_DIR/ --verbose
 ```
 
 - torchrun
 ```bash
-LMUData=/PATH/TO/TSV/DATA/ torchrun --nproc-per-node=8 run.py --data MMDocBench --model /MODEL/PATH/ --mode all --work-dir /PATH/TO/WORK_DIR/ --verbose
+LMUData=/PATH/TO/TSV/DATA/ torchrun --nproc-per-node=8 run.py --data MMDocBench --model MODEL_NAME --mode all --work-dir /PATH/TO/WORK_DIR/ --verbose
 ```
 
 ###  Evaluate Your Model
